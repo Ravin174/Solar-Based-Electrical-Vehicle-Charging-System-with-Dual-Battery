@@ -1,0 +1,64 @@
+/*
+ * Solar Based Electrical Vehicle Charging System with Dual Battery
+ * Published in JETIR, Feb 2025
+ * Thresholds: Primary < 3.6V (Switch to Backup), Backup < 3.0V (Critical)
+ */
+
+#include <LiquidCrystal.h>
+
+// Pin Definitions
+const int primaryBatPin = A0;   // Voltage sensor for Main Battery
+const int backupBatPin = A1;    // Voltage sensor for Backup Battery
+const int relayPin = 8;         // Relay to switch between batteries
+const int ledPrimary = 9;       // LED for Primary Battery status
+const int ledBackup = 10;       // LED for Backup Battery status
+
+// Initialize LCD (RS, E, D4, D5, D6, D7)
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); 
+
+void setup() {
+  pinMode(relayPin, OUTPUT);
+  pinMode(ledPrimary, OUTPUT);
+  pinMode(ledBackup, OUTPUT);
+  
+  lcd.begin(16, 2);
+  lcd.print("EV Dual Battery");
+  delay(2000);
+  
+  // Default to Primary Battery
+  digitalWrite(relayPin, LOW); 
+}
+
+void loop() {
+  // Read Analog Values
+  int primaryValue = analogRead(primaryBatPin);
+  int backupValue = analogRead(backupBatPin);
+
+  // Convert to Voltage (Assuming 5V reference and standard voltage divider)
+  float vPrimary = (primaryValue * 5.0) / 1023.0 * 3.0; // Multiplier based on divider
+  float vBackup = (backupValue * 5.0) / 1023.0 * 3.0;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("P:"); lcd.print(vPrimary); lcd.print("V ");
+  lcd.print("B:"); lcd.print(vBackup); lcd.print("V");
+
+  lcd.setCursor(0, 1);
+  
+  // Automatic Switching Logic based on Paper thresholds
+  if (vPrimary < 3.6) {
+    // Switch to Backup Battery
+    digitalWrite(relayPin, HIGH);
+    digitalWrite(ledPrimary, LOW);
+    digitalWrite(ledBackup, HIGH);
+    lcd.print("Mode: BACKUP");
+  } else {
+    // Use Primary Battery
+    digitalWrite(relayPin, LOW);
+    digitalWrite(ledPrimary, HIGH);
+    digitalWrite(ledBackup, LOW);
+    lcd.print("Mode: PRIMARY");
+  }
+
+  delay(1000); // Check every second
+}
